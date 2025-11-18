@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Analyzer - Test Harness</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --bg-color: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            padding: 20px;
+        }
+
+        .container-fluid {
+            max-width: 1400px;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .response-viewer {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .json-key {
+            color: #a11;
+        }
+
+        .json-value {
+            color: #1c00cf;
+        }
+
+        .json-string {
+            color: #0b7500;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status-error {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .status-pending {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .log-entry {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 13px;
+        }
+
+        .log-entry:hover {
+            background-color: #f1f3f5;
+        }
+
+        .log-timestamp {
+            color: #6c757d;
+            font-size: 11px;
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
+
+        .config-input {
+            margin-bottom: 15px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .test-case {
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-case-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .security-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="fas fa-vial"></i> Social Analyzer - Test Harness</h1>
+                <p class="text-muted">Secure testing and configuration management interface</p>
+            </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric">
+                    <div class="metric-value" id="total-requests">0</div>
+                    <div class="metric-label">Total Requests</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric">
+                    <div class="metric-value" id="success-count">0</div>
+                    <div class="metric-label">Successful</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric">
+                    <div class="metric-value" id="error-count">0</div>
+                    <div class="metric-label">Errors</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric">
+                    <div class="metric-value" id="avg-time">0ms</div>
+                    <div class="metric-label">Avg Response Time</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Left Column - Configuration & Testing -->
+            <div class="col-md-6">
+                <!-- Configuration Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-cog"></i> Configuration Manager
+                    </div>
+                    <div class="card-body">
+                        <div class="security-warning">
+                            <i class="fas fa-shield-alt"></i> <strong>Security Notice:</strong> Configuration is validated and sanitized. Sensitive values are masked in responses.
+                        </div>
+
+                        <div class="config-input">
+                            <label class="form-label">Google API Key (Optional)</label>
+                            <input type="password" class="form-control" id="google-api-key" placeholder="Leave empty to skip">
+                        </div>
+
+                        <div class="config-input">
+                            <label class="form-label">Google Custom Search Engine ID (Optional)</label>
+                            <input type="password" class="form-control" id="google-api-cs" placeholder="Leave empty to skip">
+                        </div>
+
+                        <div class="config-input">
+                            <label class="form-label">User-Agent</label>
+                            <input type="text" class="form-control" id="user-agent" value="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0">
+                        </div>
+
+                        <div class="config-input">
+                            <label class="form-label">Proxy URL (Optional)</label>
+                            <input type="text" class="form-control" id="proxy-url" placeholder="http://proxy.example.com:8080">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <button class="btn btn-primary w-100" onclick="saveConfig()">
+                                    <i class="fas fa-save"></i> Save Configuration
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-secondary w-100" onclick="loadConfig()">
+                                    <i class="fas fa-download"></i> Load Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Testing Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-flask"></i> API Testing
+                    </div>
+                    <div class="card-body">
+                        <div class="config-input">
+                            <label class="form-label">Username to Test</label>
+                            <input type="text" class="form-control" id="test-username" placeholder="johndoe">
+                            <small class="form-text text-muted">Only alphanumeric, dots, underscores, and hyphens allowed</small>
+                        </div>
+
+                        <div class="config-input">
+                            <label class="form-label">Detection Mode</label>
+                            <select class="form-control" id="detection-mode">
+                                <option value="fast">Fast (HTTP Only)</option>
+                                <option value="slow">Slow (Browser Automation)</option>
+                                <option value="special">Special (Facebook, Gmail, Google)</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-success w-100" onclick="runAnalysis()">
+                            <i class="fas fa-play"></i> Run Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Tests Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i> Security Tests
+                    </div>
+                    <div class="card-body">
+                        <div class="test-case">
+                            <div class="test-case-header">
+                                <span><i class="fas fa-bug"></i> XSS Injection Test</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="runSecurityTest('xss')">Run</button>
+                            </div>
+                            <div id="test-xss-result" class="test-case-result" style="display:none;"></div>
+                        </div>
+
+                        <div class="test-case">
+                            <div class="test-case-header">
+                                <span><i class="fas fa-bug"></i> Path Traversal Test</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="runSecurityTest('path-traversal')">Run</button>
+                            </div>
+                            <div id="test-path-traversal-result" class="test-case-result" style="display:none;"></div>
+                        </div>
+
+                        <div class="test-case">
+                            <div class="test-case-header">
+                                <span><i class="fas fa-bug"></i> Invalid Input Test</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="runSecurityTest('invalid-input')">Run</button>
+                            </div>
+                            <div id="test-invalid-input-result" class="test-case-result" style="display:none;"></div>
+                        </div>
+
+                        <div class="test-case">
+                            <div class="test-case-header">
+                                <span><i class="fas fa-tachometer-alt"></i> Rate Limit Test</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="runSecurityTest('rate-limit')">Run</button>
+                            </div>
+                            <div id="test-rate-limit-result" class="test-case-result" style="display:none;"></div>
+                        </div>
+
+                        <button class="btn btn-warning w-100 mt-3" onclick="runAllSecurityTests()">
+                            <i class="fas fa-play-circle"></i> Run All Security Tests
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Response Viewer & Logs -->
+            <div class="col-md-6">
+                <!-- Response Viewer Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-file-code"></i> Response Viewer
+                        <button class="btn btn-sm btn-light float-end" onclick="clearResponse()">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="response-status" class="mb-2"></div>
+                        <div class="response-viewer" id="response-viewer">
+                            <em class="text-muted">No response yet. Run a test to see results.</em>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Log Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list"></i> Request Log
+                        <button class="btn btn-sm btn-light float-end" onclick="clearLogs()">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="request-log" style="max-height: 400px; overflow-y: auto;">
+                            <em class="text-muted">No requests logged yet.</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Application state
+        const state = {
+            totalRequests: 0,
+            successCount: 0,
+            errorCount: 0,
+            responseTimes: [],
+            csrfToken: null
+        };
+
+        // Initialize
+        $(document).ready(async function() {
+            await fetchCsrfToken();
+            loadConfig();
+        });
+
+        // Fetch CSRF token
+        async function fetchCsrfToken() {
+            try {
+                const response = await fetch('/api/csrf-token');
+                const data = await response.json();
+                state.csrfToken = data.csrfToken;
+                console.log('CSRF token loaded');
+            } catch (err) {
+                console.error('Failed to fetch CSRF token:', err);
+            }
+        }
+
+        // Save configuration
+        async function saveConfig() {
+            const config = {
+                google_api_key: $('#google-api-key').val(),
+                google_api_cs: $('#google-api-cs').val(),
+                user_agent: $('#user-agent').val(),
+                proxy: $('#proxy-url').val()
+            };
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/save_settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': state.csrfToken
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+                const duration = Date.now() - startTime;
+
+                logRequest('POST', '/save_settings', response.status, duration);
+                displayResponse(data, response.status);
+
+                if (response.ok) {
+                    alert('Configuration saved successfully!');
+                } else {
+                    alert('Error saving configuration: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Error saving config:', err);
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/get_settings');
+                const data = await response.json();
+
+                if (response.ok && !data.error) {
+                    $('#google-api-key').val(data.google_api_key || '');
+                    $('#google-api-cs').val(data.google_api_cs || '');
+                    $('#user-agent').val(data.user_agent || '');
+                    $('#proxy-url').val(data.proxy || '');
+                }
+            } catch (err) {
+                console.error('Error loading config:', err);
+            }
+        }
+
+        // Run analysis
+        async function runAnalysis() {
+            const username = $('#test-username').val().trim();
+            if (!username) {
+                alert('Please enter a username to test');
+                return;
+            }
+
+            const mode = $('#detection-mode').val();
+            const uuid = generateUUID();
+
+            const payload = {
+                string: username,
+                uuid: uuid,
+                option: mode === 'fast' ? 'FindUserProfilesFast' :
+                        mode === 'slow' ? 'FindUserProfilesSlow' :
+                        'FindUserProfilesSpecial'
+            };
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/analyze_string', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': state.csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const duration = Date.now() - startTime;
+
+                logRequest('POST', '/analyze_string', response.status, duration);
+                displayResponse(data, response.status);
+
+            } catch (err) {
+                console.error('Error running analysis:', err);
+                displayResponse({ error: true, message: err.message }, 500);
+            }
+        }
+
+        // Run security test
+        async function runSecurityTest(testType) {
+            const resultDiv = $(`#test-${testType}-result`);
+            resultDiv.show().html('<em>Running test...</em>');
+
+            let testPayload, testEndpoint;
+
+            switch (testType) {
+                case 'xss':
+                    testPayload = {
+                        string: '<script>alert("XSS")</script>',
+                        uuid: generateUUID(),
+                        option: 'FindUserProfilesFast'
+                    };
+                    testEndpoint = '/analyze_string';
+                    break;
+
+                case 'path-traversal':
+                    testPayload = {
+                        string: '../../../etc/passwd',
+                        uuid: '../../malicious',
+                        option: 'FindUserProfilesFast'
+                    };
+                    testEndpoint = '/analyze_string';
+                    break;
+
+                case 'invalid-input':
+                    testPayload = {
+                        string: 'a'.repeat(1000), // Very long username
+                        uuid: generateUUID(),
+                        option: 'FindUserProfilesFast'
+                    };
+                    testEndpoint = '/analyze_string';
+                    break;
+
+                case 'rate-limit':
+                    await testRateLimit(resultDiv);
+                    return;
+            }
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(testEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': state.csrfToken
+                    },
+                    body: JSON.stringify(testPayload)
+                });
+
+                const data = await response.json();
+                const duration = Date.now() - startTime;
+
+                logRequest('POST', testEndpoint, response.status, duration, `[${testType}]`);
+
+                let result = '';
+                if (data.error) {
+                    result = `<div style="background: #d4edda; color: #155724; padding: 8px; border-radius: 4px;">
+                        ✓ <strong>PASS:</strong> Application rejected malicious input<br>
+                        Message: ${escapeHtml(data.message)}
+                    </div>`;
+                } else {
+                    result = `<div style="background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px;">
+                        ✗ <strong>WARNING:</strong> Input was accepted<br>
+                        Review response to ensure no security issues
+                    </div>`;
+                }
+
+                resultDiv.html(result);
+                displayResponse(data, response.status);
+
+            } catch (err) {
+                resultDiv.html(`<div style="background: #fff3cd; color: #856404; padding: 8px; border-radius: 4px;">
+                    ⚠ <strong>ERROR:</strong> ${escapeHtml(err.message)}
+                </div>`);
+            }
+        }
+
+        // Test rate limiting
+        async function testRateLimit(resultDiv) {
+            const requests = [];
+            for (let i = 0; i < 10; i++) {
+                requests.push(
+                    fetch('/get_settings').then(r => r.status)
+                );
+            }
+
+            try {
+                const results = await Promise.all(requests);
+                const rateLimited = results.filter(status => status === 429).length;
+
+                if (rateLimited > 0) {
+                    resultDiv.html(`<div style="background: #d4edda; color: #155724; padding: 8px; border-radius: 4px;">
+                        ✓ <strong>PASS:</strong> Rate limiting is active<br>
+                        ${rateLimited} of 10 requests were rate-limited
+                    </div>`);
+                } else {
+                    resultDiv.html(`<div style="background: #fff3cd; color: #856404; padding: 8px; border-radius: 4px;">
+                        ⚠ <strong>INFO:</strong> All requests succeeded<br>
+                        Rate limit may not be reached yet
+                    </div>`);
+                }
+            } catch (err) {
+                resultDiv.html(`<div style="background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px;">
+                    ✗ <strong>ERROR:</strong> ${escapeHtml(err.message)}
+                </div>`);
+            }
+        }
+
+        // Run all security tests
+        async function runAllSecurityTests() {
+            for (const testType of ['xss', 'path-traversal', 'invalid-input', 'rate-limit']) {
+                await runSecurityTest(testType);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait between tests
+            }
+        }
+
+        // Display response
+        function displayResponse(data, statusCode) {
+            const statusBadge = statusCode >= 200 && statusCode < 300 ?
+                '<span class="status-badge status-success">SUCCESS</span>' :
+                '<span class="status-badge status-error">ERROR</span>';
+
+            $('#response-status').html(`${statusBadge} Status Code: ${statusCode}`);
+            $('#response-viewer').html(syntaxHighlight(JSON.stringify(data, null, 2)));
+        }
+
+        // Log request
+        function logRequest(method, url, status, duration, tag = '') {
+            state.totalRequests++;
+            if (status >= 200 && status < 300) {
+                state.successCount++;
+            } else {
+                state.errorCount++;
+            }
+            state.responseTimes.push(duration);
+
+            updateMetrics();
+
+            const statusClass = status >= 200 && status < 300 ? 'text-success' : 'text-danger';
+            const timestamp = new Date().toLocaleTimeString();
+
+            const logEntry = `
+                <div class="log-entry">
+                    <div class="log-timestamp">${timestamp}</div>
+                    <strong class="${statusClass}">${method}</strong> ${url} ${tag}
+                    <span class="float-end">
+                        <span class="${statusClass}">${status}</span> | ${duration}ms
+                    </span>
+                </div>
+            `;
+
+            $('#request-log').prepend(logEntry);
+        }
+
+        // Update metrics
+        function updateMetrics() {
+            $('#total-requests').text(state.totalRequests);
+            $('#success-count').text(state.successCount);
+            $('#error-count').text(state.errorCount);
+
+            const avgTime = state.responseTimes.length > 0 ?
+                Math.round(state.responseTimes.reduce((a, b) => a + b, 0) / state.responseTimes.length) :
+                0;
+            $('#avg-time').text(avgTime + 'ms');
+        }
+
+        // Clear response
+        function clearResponse() {
+            $('#response-viewer').html('<em class="text-muted">No response yet. Run a test to see results.</em>');
+            $('#response-status').html('');
+        }
+
+        // Clear logs
+        function clearLogs() {
+            $('#request-log').html('<em class="text-muted">No requests logged yet.</em>');
+            state.totalRequests = 0;
+            state.successCount = 0;
+            state.errorCount = 0;
+            state.responseTimes = [];
+            updateMetrics();
+        }
+
+        // Utility functions
+        function generateUUID() {
+            return 'test-' + Math.random().toString(36).substring(2, 15);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-value';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+    </script>
+</body>
+</html>
