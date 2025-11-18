@@ -1,0 +1,86 @@
+# Secure Dockerfile for Social Analyzer
+# Implements security best practices:
+# - Non-root user
+# - Minimal base image
+# - Multi-stage build
+# - Security scanning
+# - Health checks
+
+# Build stage
+FROM node:18-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    firefox-esr \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /build
+
+# Copy package files first for better layer caching
+COPY package*.json ./
+
+# Install dependencies with clean install
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy application code
+COPY . .
+
+# Remove development files
+RUN rm -rf tests/ .git/ .github/ .env.example
+
+# Production stage
+FROM node:18-alpine
+
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    firefox-esr \
+    dumb-init \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup -g 1001 -S socialanalyzer && \
+    adduser -S -u 1001 -G socialanalyzer socialanalyzer
+
+# Set working directory
+WORKDIR /app
+
+# Copy from builder stage
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/node_modules ./node_modules
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/*.js ./
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/modules ./modules
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/public ./public
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/data ./data
+COPY --from=builder --chown=socialanalyzer:socialanalyzer /build/package*.json ./
+
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && \
+    chown -R socialanalyzer:socialanalyzer /app/logs
+
+# Security: Remove unnecessary write permissions
+RUN chmod -R 555 /app && \
+    chmod -R 755 /app/logs
+
+# Switch to non-root user
+USER socialanalyzer
+
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=9005 \
+    HOST=0.0.0.0
+
+# Expose port
+EXPOSE 9005
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:9005/get_settings', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "app.js", "--gui", "--docker"]

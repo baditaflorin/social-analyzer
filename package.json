@@ -4,20 +4,30 @@
   "description": "Advanced Social Media Profiles Finder and String Analysis Tool",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js --gui"
+    "test": "mocha tests/**/*.test.js --timeout 10000",
+    "test:unit": "mocha tests/unit/**/*.test.js",
+    "test:integration": "mocha tests/integration/**/*.test.js",
+    "test:security": "mocha tests/security/**/*.test.js",
+    "start": "node app.js --gui",
+    "dev": "NODE_ENV=development node app.js --gui",
+    "lint": "eslint ."
   },
   "dependencies": {
     "async": "3.2.4",
     "cheerio": "^1.0.0-rc.11",
     "cli-table": "0.3.11",
     "colors": "1.4.0",
+    "csrf-csrf": "^3.0.0",
+    "dotenv": "^16.0.3",
     "express": "^4.18.1",
     "express-async-errors": "3.1.1",
+    "express-rate-limit": "^6.7.0",
+    "express-session": "^1.17.3",
     "follow-redirects": "^1.15.1",
     "franc": "^6.0.0",
     "geckodriver": "^3.0.1",
     "generatorics": "1.1.0",
+    "helmet": "^7.0.0",
     "html-to-text": "8.2.0",
     "https-proxy-agent": "5.0.1",
     "ixora": "1.0.10",
@@ -33,6 +43,7 @@
     "slash": "4.0.0",
     "string-similarity": "4.0.4",
     "tesseract.js": "2.1.5",
+    "validator": "^13.9.0",
     "wink-tokenizer": "5.3.0",
     "wordsninja": "1.0.0",
     "yargs": "17.5.1"
@@ -44,11 +55,14 @@
     "url": "https://github.com/qeeqbox/social-analyzer"
   },
   "devDependencies": {
+    "chai": "^4.3.7",
     "eslint": "^8.18.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^6.0.0"
+    "eslint-plugin-promise": "^6.0.0",
+    "mocha": "^10.2.0",
+    "supertest": "^6.3.3"
   },
   "type": "module"
 }
